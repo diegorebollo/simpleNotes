@@ -15,7 +15,10 @@ const getAllLocalStorageKeys = () => {
     });
 
     allLocalStorageKeys.sort();
+
+    return allLocalStorageKeys.length
 };
+
 
 const displayNotes = () => {
 
@@ -24,8 +27,8 @@ const displayNotes = () => {
         const date = new Date(Number(key))
 
         const htmlNote = `
-        <aside>
-        <p><a href="${key}" class='remove-note'>X</a></p>
+        <aside id='${key}'>
+        <p><a href="#" class='remove-note'>X</a></p>
         <h3>${date.toLocaleDateString("en-GB")} | ${date.toLocaleTimeString("es-ES")} </h3>
         <p>${note}</p>
         </aside>    `
@@ -36,9 +39,11 @@ const displayNotes = () => {
 
     btnRemoveNote.forEach(btn => {
         btn.addEventListener('click', function(e){
-            e.preventDefault();
-            const note = e.srcElement.getAttribute('href');
-            localStorage.removeItem(note);
+            e.preventDefault(); 
+            const note = e.target.closest('aside');
+            note.remove();
+            localStorage.removeItem(note.id);            
+            if (localStorage.length === 0) location.reload();
         });
     });    
 };
@@ -54,7 +59,7 @@ const newNote = () => {
 
     <aside id='new-note'>    
     <textarea id="text-area" rows="10"></textarea> 
-    <p><button id="save-btn">New Note</button></p>
+    <p><button id="save-btn">Save Note</button></p>
     </aside>
 
     `
@@ -69,23 +74,34 @@ const newNote = () => {
         saveNote(textarea.value)
         newNote.remove();
         header.style = "";
+        location.reload();
     })
+        
 };
 
 const noNotes = () => {
-    document.getElementById("new-note-btn").remove();
+    document.getElementById("menu").remove();
     const btnHtml = '<p><button id="new-note-btn">New Note</button></p>';
     header.insertAdjacentHTML('beforeend', btnHtml);
 };
 
-getAllLocalStorageKeys();
-allLocalStorageKeys.length ? displayNotes() : noNotes();
+const isListEmpty = getAllLocalStorageKeys();
+
+isListEmpty ? displayNotes() : noNotes();
 
 const btnNewNote = document.getElementById('new-note-btn');
+const btnExport = document.getElementById('export-btn');
 
-btnNewNote.addEventListener('click', () => {
+btnNewNote.addEventListener('click', (e) => {
+    e.preventDefault();
     newNote();
     btnNewNote.setAttribute('disabled', '');
-    header.style = "filter:  blur(10px)";
 });
 
+btnExport?.addEventListener('click', (e) => {
+    const json = JSON.stringify(localStorage);
+    const link = e.target;
+    const file = new Blob([json], { type: 'application/json' });
+    link.href = URL.createObjectURL(file);
+    link.download = `simpleNotes-export-${date()}.json`;
+});
